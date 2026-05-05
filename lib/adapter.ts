@@ -1,12 +1,20 @@
-import { createWalletClient, http } from "viem";
-import { sepolia } from "viem/chains";
-import { createViemAdapter } from "@circle-fin/adapter-viem-v2";
+import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
+import type { EIP1193Provider } from "viem";
 
-export const walletClient = createWalletClient({
-  chain: sepolia,
-  transport: http(),
-});
+export async function createAdapter() {
+  if (typeof window === "undefined") {
+    throw new Error("Must run in browser");
+  }
 
-export const adapter = createViemAdapter({
-  client: walletClient,
-});
+  const provider = (window as any).ethereum as EIP1193Provider;
+
+  if (!provider) {
+    throw new Error("No wallet found");
+  }
+
+  const adapter = await createViemAdapterFromProvider({
+    provider,
+  });
+
+  return adapter;
+}

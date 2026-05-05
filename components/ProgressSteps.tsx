@@ -1,17 +1,20 @@
 "use client";
 
-type Step = {
+export type StepStatus = "idle" | "loading" | "done";
+
+export type Step = {
   name: string;
-  status: "idle" | "loading" | "done";
+  status: StepStatus;
 };
 
 export default function ProgressSteps({ steps }: { steps: Step[] }) {
   return (
-    <div className="mt-4 space-y-2">
+    <div className="mt-4 space-y-3">
       {steps.map((step) => (
-        <div key={step.name} className="flex justify-between text-sm">
-          <span>{step.name}</span>
-          <span>
+        <div key={step.name} className="flex items-center justify-between">
+          <span className="text-sm text-white">{step.name}</span>
+
+          <span className="text-sm">
             {step.status === "done" && "✔"}
             {step.status === "loading" && "⏳"}
             {step.status === "idle" && "•"}

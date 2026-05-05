@@ -2,58 +2,91 @@
 
 import { useEffect, useState } from "react";
 import { kit } from "@/lib/arc";
-import { adapter } from "@/lib/adapter";
-
+import { createAdapter } from "@/lib/adapter";
 import ChainSelector from "./ChainSelector";
 import AmountInput from "./AmountInput";
+import type { Step } from "./ProgressSteps";
 import ProgressSteps from "./ProgressSteps";
+import type { AdapterContext } from "@circle-fin/app-kit";
+
+type BridgeChainIdentifier = AdapterContext<any, any>["chain"];
 
 export default function BridgeCard() {
-  const [fromChain, setFromChain] = useState("Ethereum_Sepolia");
-  const [toChain, setToChain] = useState("Arc_Testnet");
+  const [adapter, setAdapter] = useState<any>(null);
+
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
-  const [steps, setSteps] = useState([
+  const [fromChain, setFromChain] =
+    useState<BridgeChainIdentifier>("Ethereum_Sepolia");
+
+  const [toChain, setToChain] =
+    useState<BridgeChainIdentifier>("Arc_Testnet");
+
+  const [fees, setFees] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [steps, setSteps] = useState<Step[]>([
     { name: "Approve", status: "idle" },
     { name: "Burn", status: "idle" },
     { name: "Attestation", status: "idle" },
     { name: "Mint", status: "idle" },
   ]);
 
-  const [fees, setFees] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-
-  // 🔥 Listen to bridge events
+  // Initialize adapter
   useEffect(() => {
-    kit.on("*", (event: any) => {
-      const map: any = {
-        "bridge.approve": 0,
-        "bridge.burn": 1,
-        "bridge.attestation": 2,
-        "bridge.mint": 3,
-      };
+    const init = async () => {
+      const ad = await createAdapter();
+      setAdapter(ad);
+    };
 
-      const index = map[event.method];
-      if (index !== undefined) {
-        setSteps((prev) => {
-          const updated = [...prev];
-          updated[index].status = "done";
-          return updated;
-        });
-      }
-    });
+    init();
   }, []);
 
-  // 💰 Estimate fees
+  // PROGRESS EVENT LISTENER (FIXED)
+  useEffect(() => {
+    if (!kit) return;
+
+    const map: Record<string, number> = {
+      "bridge.approve": 0,
+      "bridge.burn": 1,
+      "bridge.attestation": 2,
+      "bridge.mint": 3,
+    };
+
+    const handler = (event: any) => {
+      const index = map[event.method];
+      if (index === undefined) return;
+
+      setSteps((prev) => {
+        const updated = [...prev];
+
+        // mark ACTIVE step (loading)
+        updated[index] = {
+          ...updated[index],
+          status: "loading",
+        };
+
+        return updated;
+      });
+    };
+
+    kit.on("*", handler);
+
+    return () => {
+      kit.off?.("*", handler);
+    };
+  }, []);
+
+  // Estimate fees (unchanged)
   const handleEstimate = async () => {
-    if (!amount) return;
+    if (!amount || !adapter) return;
 
     const estimate = await kit.estimateBridge({
       from: { adapter, chain: fromChain },
       to: {
+        adapter,
         chain: toChain,
-        recipientAddress: recipient || undefined,
         useForwarder: true,
       },
       amount,
@@ -63,30 +96,51 @@ export default function BridgeCard() {
     setFees(estimate);
   };
 
-  // 🚀 Execute bridge
+  // Bridge (ONLY progress touched here)
   const handleBridge = async () => {
+    if (!amount || !adapter) return;
+
     try {
       setLoading(true);
 
+      // RESET STEPS (safe + clean)
+      setSteps([
+        { name: "Approve", status: "loading" },
+        { name: "Burn", status: "idle" },
+        { name: "Attestation", status: "idle" },
+        { name: "Mint", status: "idle" },
+      ]);
+
       const result = await kit.bridge({
         from: { adapter, chain: fromChain },
-        to: {
-          chain: toChain,
-          recipientAddress: recipient || undefined,
-          useForwarder: true,
-        },
+        to: { adapter, chain: toChain, useForwarder: true },
         amount,
         token: "USDC",
       });
 
+      console.log("Bridge result:", result);
+
+      // no kit.retry exists → keep re-call fallback
       if (result.state === "error") {
-        await kit.retry(result, {
-          from: adapter,
-          to: adapter,
+        const retryResult = await kit.bridge({
+          from: { adapter, chain: fromChain },
+          to: { adapter, chain: toChain, useForwarder: true },
+          amount,
+          token: "USDC",
         });
+
+        console.log("Retry result:", retryResult);
       }
+
+      // FINAL STEP UPDATE (ALL DONE)
+      setSteps((prev) =>
+        prev.map((step) => ({
+          ...step,
+          status: "done",
+        }))
+      );
     } catch (err) {
-      console.error(err);
+      console.error("Bridge error:", err);
     } finally {
       setLoading(false);
     }
@@ -108,7 +162,6 @@ export default function BridgeCard() {
         className="w-full p-3 rounded-xl bg-[#1a1a1a] border border-gray-700 text-white"
       />
 
-      {/* Fees */}
       {fees && (
         <div className="text-sm text-gray-400">
           Fee: {fees.fee ?? "N/A"}
@@ -118,6 +171,7 @@ export default function BridgeCard() {
       <div className="flex gap-2">
         <button
           onClick={handleEstimate}
+          disabled={!adapter}
           className="flex-1 bg-gray-800 p-3 rounded-xl text-white"
         >
           Estimate
@@ -125,7 +179,7 @@ export default function BridgeCard() {
 
         <button
           onClick={handleBridge}
-          disabled={!amount || loading}
+          disabled={!amount || loading || !adapter}
           className="flex-1 bg-blue-600 p-3 rounded-xl text-white disabled:opacity-50"
         >
           {loading ? "Bridging..." : "Bridge"}
