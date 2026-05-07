@@ -8,8 +8,15 @@ import AmountInput from "./AmountInput";
 import type { Step } from "./ProgressSteps";
 import ProgressSteps from "./ProgressSteps";
 import type { AdapterContext } from "@circle-fin/app-kit";
+import { HiArrowsUpDown } from "react-icons/hi2";
 
 type BridgeChainIdentifier = AdapterContext<any, any>["chain"];
+
+const ARC = "Arc_Testnet";
+const NON_ARC_CHAINS = [
+  { label: "Ethereum Sepolia", value: "Ethereum_Sepolia" },
+  { label: "Base Sepolia", value: "Base_Sepolia" },
+];
 
 export default function BridgeCard() {
   const [adapter, setAdapter] = useState<any>(null);
@@ -17,14 +24,14 @@ export default function BridgeCard() {
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
-  const [fromChain, setFromChain] =
-    useState<BridgeChainIdentifier>("Ethereum_Sepolia");
-
+  const [fromChain, setFromChain] = useState<BridgeChainIdentifier>(ARC);
   const [toChain, setToChain] =
-    useState<BridgeChainIdentifier>("Arc_Testnet");
+    useState<BridgeChainIdentifier>("Ethereum_Sepolia");
 
   const [fees, setFees] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const [swapped, setSwapped] = useState(false);
 
   const [steps, setSteps] = useState<Step[]>([
     { name: "Approve", status: "idle" },
@@ -77,6 +84,18 @@ export default function BridgeCard() {
       kit.off?.("*", handler);
     };
   }, []);
+
+  const handleSwap = () => {
+    if (fromChain === ARC) {
+      setFromChain(toChain);
+      setToChain(ARC);
+    } else {
+      setToChain(fromChain);
+      setFromChain(ARC);
+    }
+
+    setSwapped((prev) => !prev);
+  };
 
   // Estimate fees (unchanged)
   const handleEstimate = async () => {
@@ -137,7 +156,7 @@ export default function BridgeCard() {
         prev.map((step) => ({
           ...step,
           status: "done",
-        }))
+        })),
       );
     } catch (err) {
       console.error("Bridge error:", err);
@@ -150,8 +169,34 @@ export default function BridgeCard() {
     <div className="bg-[#0f0f0f] p-6 rounded-2xl w-full max-w-md mx-auto shadow-xl border border-gray-800 space-y-4">
       <h2 className="text-xl font-semibold text-white">Bridge USDC</h2>
 
-      <ChainSelector label="From" value={fromChain} onChange={setFromChain} />
-      <ChainSelector label="To" value={toChain} onChange={setToChain} />
+      <div className="flex flex-col items-center gap-2">
+        <ChainSelector
+          label="From"
+          value={fromChain}
+          onChange={setFromChain}
+          chains={NON_ARC_CHAINS}
+          locked={fromChain === ARC}
+        />
+
+        <button
+          onClick={handleSwap}
+          className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"
+        >
+          <HiArrowsUpDown
+            className={`text-white text-xl transition-transform duration-300 ${
+              swapped ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+
+        <ChainSelector
+          label="To"
+          value={toChain}
+          onChange={setToChain}
+          chains={NON_ARC_CHAINS}
+          locked={toChain === ARC}
+        />
+      </div>
 
       <AmountInput amount={amount} setAmount={setAmount} />
 
@@ -162,16 +207,20 @@ export default function BridgeCard() {
         className="w-full p-3 rounded-xl bg-[#1a1a1a] border border-gray-700 text-white"
       />
 
-      {fees && (
-        <div className="text-sm text-gray-400">
-          Fee: {fees.fee ?? "N/A"}
+      {fees?.fees?.length > 0 && (
+        <div className="space-y-1 text-sm text-gray-400">
+          {fees.fees.map((fee: any, index: number) => (
+            <div key={index}>
+              {fee.type}: {fee.amount}
+            </div>
+          ))}
         </div>
       )}
 
       <div className="flex gap-2">
         <button
           onClick={handleEstimate}
-          disabled={!adapter}
+          disabled={!adapter || loading || !amount || Number(amount) <= 0}
           className="flex-1 bg-gray-800 p-3 rounded-xl text-white"
         >
           Estimate
