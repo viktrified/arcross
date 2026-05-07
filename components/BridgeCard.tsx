@@ -32,6 +32,7 @@ export default function BridgeCard() {
   const [loading, setLoading] = useState(false);
 
   const [swapped, setSwapped] = useState(false);
+  const [showCustomAddress, setShowCustomAddress] = useState(false);
 
   const [steps, setSteps] = useState<Step[]>([
     { name: "Approve", status: "idle" },
@@ -98,22 +99,22 @@ export default function BridgeCard() {
   };
 
   // Estimate fees (unchanged)
-  const handleEstimate = async () => {
-    if (!amount || !adapter) return;
+  // const handleEstimate = async () => {
+  //   if (!amount || !adapter) return;
 
-    const estimate = await kit.estimateBridge({
-      from: { adapter, chain: fromChain },
-      to: {
-        adapter,
-        chain: toChain,
-        useForwarder: true,
-      },
-      amount,
-      token: "USDC",
-    });
+  //   const estimate = await kit.estimateBridge({
+  //     from: { adapter, chain: fromChain },
+  //     to: {
+  //       adapter,
+  //       chain: toChain,
+  //       useForwarder: true,
+  //     },
+  //     amount,
+  //     token: "USDC",
+  //   });
 
-    setFees(estimate);
-  };
+  //   setFees(estimate);
+  // };
 
   // Bridge (ONLY progress touched here)
   const handleBridge = async () => {
@@ -166,10 +167,8 @@ export default function BridgeCard() {
   };
 
   return (
-    <div className="bg-[#0f0f0f] p-6 rounded-2xl w-full max-w-md mx-auto shadow-xl border border-gray-800 space-y-4">
-      <h2 className="text-xl font-semibold text-white">Bridge USDC</h2>
-
-      <div className="flex flex-col items-center gap-2">
+    <div className="py-8">
+      <div className="relative flex flex-col gap-3">
         <ChainSelector
           label="From"
           value={fromChain}
@@ -177,10 +176,9 @@ export default function BridgeCard() {
           chains={NON_ARC_CHAINS}
           locked={fromChain === ARC}
         />
-
         <button
           onClick={handleSwap}
-          className="p-2 rounded-full bg-gray-800 hover:bg-gray-700"
+          className="absolute left-1/2 top-[50%] z-20 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#151515] border border-[#2a2a2a] flex items-center justify-center"
         >
           <HiArrowsUpDown
             className={`text-white text-xl transition-transform duration-300 ${
@@ -188,7 +186,6 @@ export default function BridgeCard() {
             }`}
           />
         </button>
-
         <ChainSelector
           label="To"
           value={toChain}
@@ -199,15 +196,33 @@ export default function BridgeCard() {
       </div>
 
       <AmountInput amount={amount} setAmount={setAmount} />
+      <div className="bg-[#1a1a1a] rounded-2xl border border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-400 text-sm">Custom Address</span>
+          <button
+            onClick={() => setShowCustomAddress((prev) => !prev)}
+            className={`w-11 h-6 rounded-full transition-colors duration-200 ${
+              showCustomAddress ? "bg-blue-600" : "bg-gray-700"
+            } relative`}
+          >
+            <span
+              className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                showCustomAddress ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+        {showCustomAddress && (
+          <input
+            placeholder="Recipient address"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            className="mt-3 w-full bg-transparent border-t border-gray-700 pt-3 text-white text-sm outline-none placeholder-gray-600"
+          />
+        )}
+      </div>
 
-      <input
-        placeholder="Recipient (optional)"
-        value={recipient}
-        onChange={(e) => setRecipient(e.target.value)}
-        className="w-full p-3 rounded-xl bg-[#1a1a1a] border border-gray-700 text-white"
-      />
-
-      {fees?.fees?.length > 0 && (
+      {/* {fees?.fees?.length > 0 && (
         <div className="space-y-1 text-sm text-gray-400">
           {fees.fees.map((fee: any, index: number) => (
             <div key={index}>
@@ -215,7 +230,7 @@ export default function BridgeCard() {
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
       <div className="flex gap-2">
         {/* <button
