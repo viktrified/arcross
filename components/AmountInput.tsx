@@ -1,3 +1,5 @@
+// components/AmountInput.tsx
+
 "use client";
 
 type Props = {

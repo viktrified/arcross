@@ -1,3 +1,5 @@
+// components/BridgeCard.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -175,6 +177,8 @@ export default function BridgeCard() {
           onChange={setFromChain}
           chains={NON_ARC_CHAINS}
           locked={fromChain === ARC}
+          amount={amount}
+          setAmount={setAmount}
         />
         <button
           onClick={handleSwap}
@@ -195,7 +199,6 @@ export default function BridgeCard() {
         />
       </div>
 
-      <AmountInput amount={amount} setAmount={setAmount} />
       <div className="bg-[#1a1a1a] rounded-2xl border border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <span className="text-gray-400 text-sm">Custom Address</span>

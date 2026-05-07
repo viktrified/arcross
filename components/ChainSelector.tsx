@@ -1,3 +1,5 @@
+// components/ChainSelector.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -9,6 +11,9 @@ type Props = {
   onChange: (val: string) => void;
   chains?: { label: string; value: string }[];
   locked?: boolean;
+
+  amount?: string;
+  setAmount?: (val: string) => void;
 };
 
 const CHAINS = [
@@ -23,13 +28,15 @@ export default function ChainSelector({
   onChange,
   chains,
   locked,
+  amount,
+  setAmount,
 }: Props) {
   const ALL_CHAINS = chains ?? CHAINS;
   const selected =
     CHAINS.find((c) => c.value === value) ||
     ALL_CHAINS.find((c) => c.value === value);
 
-    const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   return (
     <div className="relative w-full">
       <div className="relative bg-[#151515] border border-[#2a2a2a] rounded-[28px] px-5 py-4 min-h-[120px] overflow-hidden">
@@ -85,16 +92,47 @@ export default function ChainSelector({
         </div>
 
         {/* amount section */}
-        <div className="mt-6">
-          <div className="text-[42px] leading-none font-semibold text-[#4a4a4a]">
-            0.00
-          </div>
+        <div className="mt-6 flex items-start justify-between">
+          {label === "From" ? (
+            <input
+              type="number"
+              min="0"
+              value={amount}
+              onKeyDown={(e) => {
+                if (["-", "+", "e", "E"].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => {
+                const value = e.target.value;
 
-          <div className="text-sm text-[#6d6d6d] mt-2">$0.00</div>
+                if (!setAmount) return;
+
+                if (value === "") {
+                  setAmount("");
+                  return;
+                }
+
+                const num = parseFloat(value);
+                setAmount(num < 0 ? "0" : value);
+              }}
+              placeholder="0.00"
+              className="bg-transparent outline-none border-none text-[42px] leading-none font-semibold text-white placeholder:text-[#4a4a4a] w-[180px]"
+            />
+          ) : (
+            <div className="text-[42px] leading-none font-semibold text-[#4a4a4a]">
+              0.00
+            </div>
+          )}
+
+          <div className="flex flex-col items-end">
+            <button className="rounded-full bg-[#f3f3f3]/70 px-3 py-1 text-[12px] font-medium text-[#4a4a4a] transition hover:bg-[#e7e7e7]">
+              Max
+            </button>
+            <div className="text-[12px] text-[#6d6d6d] mt-2">Balance: 0.00</div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-
