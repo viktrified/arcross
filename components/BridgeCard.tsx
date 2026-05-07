@@ -218,13 +218,13 @@ export default function BridgeCard() {
       )}
 
       <div className="flex gap-2">
-        <button
+        {/* <button
           onClick={handleEstimate}
           disabled={!adapter || loading || !amount || Number(amount) <= 0}
           className="flex-1 bg-gray-800 p-3 rounded-xl text-white"
         >
           Estimate
-        </button>
+        </button> */}
 
         <button
           onClick={handleBridge}
