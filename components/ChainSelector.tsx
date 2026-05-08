@@ -63,32 +63,48 @@ export default function ChainSelector({
             </div>
           </div>
 
+          {/* Dropdown + Chevron */}
           {!locked && (
-            <select
-              value={value}
-              onClick={() => setOpen((prev) => !prev)}
-              onBlur={() => setOpen(false)}
-              onChange={(e) => {
-                onChange(e.target.value);
-                setOpen(false);
-              }}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            >
-              {ALL_CHAINS.map((chain) => (
-                <option key={chain.value} value={chain.value}>
-                  {chain.label}
-                </option>
-              ))}
-            </select>
-          )}
+            <div className="relative z-30">
+              {/* Clickable area over the whole card */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={() => setOpen((prev) => !prev)}
+              />
 
-          <div className="w-10 h-10 rounded-full border border-[#2d2d2d] flex items-center justify-center">
-            <HiChevronDown
-              className={`text-[#8b8b8b] transition-transform duration-300 ${
-                open ? "rotate-180" : "rotate-0"
-              }`}
-            />
-          </div>
+              {/* Chevron */}
+              <div
+                className="w-10 h-10 rounded-full border border-[#2d2d2d] flex items-center justify-center cursor-pointer"
+                onClick={() => setOpen((prev) => !prev)}
+              >
+                <HiChevronDown
+                  className={`text-[#8b8b8b] transition-transform duration-300 ${
+                    open ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </div>
+
+              {/* Custom Dropdown Menu */}
+              {open && (
+                <div className="absolute right-0 mt-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl py-2 w-64 shadow-xl z-50">
+                  {ALL_CHAINS.map((chain) => (
+                    <div
+                      key={chain.value}
+                      className={`px-5 py-3 hover:bg-[#252525] cursor-pointer text-white ${
+                        value === chain.value ? "bg-[#252525]" : ""
+                      }`}
+                      onClick={() => {
+                        onChange(chain.value);
+                        setOpen(false);
+                      }}
+                    >
+                      {chain.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* amount section */}

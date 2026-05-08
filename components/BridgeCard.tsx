@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { kit } from "@/lib/arc";
 import { createAdapter } from "@/lib/adapter";
 import ChainSelector from "./ChainSelector";
-import AmountInput from "./AmountInput";
 import type { Step } from "./ProgressSteps";
 import ProgressSteps from "./ProgressSteps";
 import type { AdapterContext } from "@circle-fin/app-kit";
@@ -199,7 +198,7 @@ export default function BridgeCard() {
         />
       </div>
 
-      <div className="bg-[#1a1a1a] rounded-2xl border border-gray-800 p-4">
+      {/* <div className="bg-[#1a1a1a] rounded-2xl border border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <span className="text-gray-400 text-sm">Custom Address</span>
           <button
@@ -223,7 +222,7 @@ export default function BridgeCard() {
             className="mt-3 w-full bg-transparent border-t border-gray-700 pt-3 text-white text-sm outline-none placeholder-gray-600"
           />
         )}
-      </div>
+      </div> */}
 
       {/* {fees?.fees?.length > 0 && (
         <div className="space-y-1 text-sm text-gray-400">
@@ -247,7 +246,7 @@ export default function BridgeCard() {
         <button
           onClick={handleBridge}
           disabled={!amount || loading || !adapter}
-          className="flex-1 bg-blue-600 p-3 rounded-xl text-white disabled:opacity-50"
+          className="flex-1 bg-blue-600 p-3 my-4 rounded-xl text-white disabled:opacity-50"
         >
           {loading ? "Bridging..." : "Bridge"}
         </button>
